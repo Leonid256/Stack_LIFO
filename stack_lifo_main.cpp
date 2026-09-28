@@ -36,8 +36,13 @@ int main()
     Stack_Push(&stk1, 10);
     Stack_Push(&stk1, 20);
     Stack_Push(&stk1, 30);
+    Stack_Push(&stk1, 40);
+    Stack_Push(&stk1, 50);
+    Stack_Push(&stk1, 60);
+    Stack_Push(&stk1, 70);
 
     double x = 0;
+    
     err = Stack_Pop(&stk1, &x);
     if (err) printf("stack Pop error\n");
     printf("x1 = %lg\n", x);
@@ -54,7 +59,7 @@ int main()
     if (err) printf("stack Pop error\n");
     printf("x4 = %lg\n", x);
     
-    Stack_Push(&stk1, 40);
+    Stack_Push(&stk1, 80);
 
     err = Stack_Pop(&stk1, &x);
     if (err) printf("stack Pop error\n");
