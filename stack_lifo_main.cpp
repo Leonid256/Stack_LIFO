@@ -1,217 +1,256 @@
-typedef double StackElem_t;
-
-//----------------------------------------------------------------------------
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
-
-//----------------------------------------------------------------------------
-struct stack_lifo
-{
-    StackElem_t* data;
-    int size;
-    size_t capacity;
-};
-//----------------------------------------------------------------------------
-int Stack_Init(stack_lifo* stk, size_t capacity);
-int Stack_Push(stack_lifo* stk, StackElem_t elem);
-int Stack_Pop(stack_lifo* stk, StackElem_t* value);
-int Stack_Error(stack_lifo* stk);
-int Stack_Init_Error(stack_lifo* stk);
-void Stack_Info(stack_lifo* stk);
-
-//----------------------------------------------------------------------------
-const size_t START_CAPACITY = 5;
-const int INCREASE_DATA = 2;
-const StackElem_t POISON = 0xEDA;
+#include "stack.hpp"
 
 //----------------------------------------------------------------------------
 int main()
 {
-    stack_lifo stk1 = {};
-    int err = Stack_Init(&stk1, START_CAPACITY);
-    if (err) printf("Init stack error\n");
-    Stack_Info(&stk1);
+    stack_lifo_t stk1 = {};
+    stk_error_codes_t err = STK_NO_ERROR;
+    err = stack_init(&stk1, START_CAPACITY);
+    stack_dump(&stk1, STACK_DUMP_FILE, "w");
 
-    Stack_Push(&stk1, 10);
-    Stack_Push(&stk1, 20);
-    Stack_Push(&stk1, 30);
-    Stack_Push(&stk1, 40);
-    Stack_Push(&stk1, 50);
-    Stack_Push(&stk1, 60);
-    Stack_Push(&stk1, 70);
+    stack_push(&stk1, 10);
+    stack_push(&stk1, 20);
+    stack_push(&stk1, 30);
+    stack_push(&stk1, 40);
+    stack_push(&stk1, 50);
+    stack_push(&stk1, 60);
+    stack_push(&stk1, 70);
 
     double x = 0;
-    
-    err = Stack_Pop(&stk1, &x);
-    if (err) printf("stack Pop error\n");
+
+    err = stack_pop(&stk1, &x);
     printf("x1 = %lg\n", x);
 
-    err = Stack_Pop(&stk1, &x);
-    if (err) printf("stack Pop error\n");
+    err = stack_pop(&stk1, &x);
     printf("x2 = %lg\n", x);
 
-    err = Stack_Pop(&stk1, &x);
-    if (err) printf("stack Pop error\n");
+    err = stack_pop(&stk1, &x);
     printf("x3 = %lg\n", x);
 
-    err = Stack_Pop(&stk1, &x);
-    if (err) printf("stack Pop error\n");
+    err = stack_pop(&stk1, &x);
     printf("x4 = %lg\n", x);
-    
-    Stack_Push(&stk1, 80);
 
-    err = Stack_Pop(&stk1, &x);
-    if (err) printf("stack Pop error\n");
+    stack_push(&stk1, 80);
+
+    err = stack_pop(&stk1, &x);
     printf("x5 = %lg\n", x);
+
+    stack_dump(&stk1, STACK_DUMP_FILE, "a");
+    stack_destroy(&stk1);
 
     return 0;
 }
 
 //----------------------------------------------------------------------------
-int Stack_Init(stack_lifo* stk, size_t capacity)
+stk_error_codes_t stack_init(stack_lifo_t* stk, size_t capacity)
 {
-    if (Stack_Init_Error(stk) != 0)
+    stk_error_codes_t err = STK_NO_ERROR;
+    if ((err = stack_init_verify(stk)) != 0)
     {
-        printf("Stack_Init enter error\n");
-        Stack_Info(stk);
+        printf(RED "Stack_init enter error in %s:%d\n" CRESET, __FILE__, __LINE__);
+        return err;
     }
 
-    stk -> data = (StackElem_t*)calloc(capacity, sizeof(StackElem_t));
+    stack_elem_t* raw_data = (stack_elem_t*)calloc(capacity + 2, sizeof(stack_elem_t));
+    if (raw_data == NULL)
+    {
+        printf(RED "Memory allocation error in %s:%d\n" CRESET, __FILE__, __LINE__);
+        return STK_MEMORY_ERROR;
+    }
+    raw_data[0] = CANARY_VALUE;
+    raw_data[capacity + 1] = CANARY_VALUE;
+
+    stk -> data = raw_data + 1;
     stk -> size = 0;
     stk -> capacity = capacity;
 
-    for (size_t i = 0; i < (stk -> capacity); i++)
+    for (size_t i = 0; i < capacity; i++)
     {
-        (stk -> data)[i] = POISON;
+        (stk -> data)[i] = POISON_ELEM;
     }
 
-    return 0;
+    return err;
 }
 
 //----------------------------------------------------------------------------
-int Stack_Push(stack_lifo* stk, StackElem_t value)
+stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value)
 {
-    if (Stack_Error(stk) != 0)
+    stk_error_codes_t err = STK_NO_ERROR;
+    if ((err = stack_verify(stk)) != STK_NO_ERROR)
     {
-        printf("Stack_Push enter error\n");
-        Stack_Info(stk);
+        printf(RED "Stack_push enter error in %s:%d\n" CRESET, __FILE__, __LINE__);
+        printf(YEL "err = %d\n" CRESET, err);
+
+        return err;
+    }
+
+    if ((stk -> size) >= (stk -> capacity))
+    {
+        stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data - 1, ((stk -> capacity) * INCREASE_DATA + 2) * sizeof(stack_elem_t));
+        if (temp == NULL)
+        {
+            printf(RED "Stack increase error in %s:%d\n" CRESET, __FILE__, __LINE__);
+            return STK_INCREASE_ERR;
+        }
+
+        temp[stk -> capacity * INCREASE_DATA + 1] = CANARY_VALUE;
+        stk -> data = temp + 1;
+
+        stk -> data[stk -> capacity] = POISON_ELEM;
+        (stk -> capacity) *= INCREASE_DATA;
+
+        for (size_t i = stk -> capacity / INCREASE_DATA + 1; i < stk -> capacity; i++)
+        {
+            stk -> data[i] = POISON_ELEM;
+        }
     }
 
     (stk -> data)[stk -> size++] = value;
 
-    if ((stk -> size) >= (stk -> capacity))
-    {
-        StackElem_t* temp = (StackElem_t*)realloc(stk -> data, (stk -> capacity) * sizeof(StackElem_t) * INCREASE_DATA);
-        if (temp != NULL)
-        {
-            stk -> data = temp;
-            (stk -> capacity) *= 2;
-        }
-        else
-        {
-            printf("Stack increase error\n");
-            return 7;
-        }
-    }
-
-    return 0;
+    return stack_verify(stk);
 }
 
 //----------------------------------------------------------------------------
-int Stack_Pop(stack_lifo* stk, StackElem_t* value)
+stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value)
 {
-    if (Stack_Error(stk) != 0)
+    stk_error_codes_t err = STK_NO_ERROR;
+    if ((err = stack_verify(stk)) != STK_NO_ERROR)
     {
-        printf("Stack_Pop enter error\n");
-        Stack_Info(stk);
+        printf(RED "Stack_pop enter error in %s:%d\n" CRESET, __FILE__, __LINE__);
+        printf(YEL "err = %d\n" CRESET, err);
+
+        return err;
     }
 
     if (stk -> size > 0)
     {
         *value = (stk -> data)[--(stk -> size)];
-        (stk -> data)[(stk -> size)] = POISON;
+        (stk -> data)[(stk -> size)] = POISON_ELEM;
     }
     else if (stk -> size == 0)
     {
-        *value = (stk -> data)[0];
-        printf("Error: try to pop elem, but stack is empty. Value = POISON value\n");
+        *value = POISON_ELEM;
+        printf(RED "Error in %s:%d: try to pop elem, but stack is empty. Value = POISON_ELEM value\n" CRESET, __FILE__, __LINE__);
+        return STK_EMPTY_ERR;
     }
     else
     {
-        printf("Error: trying to Pop negative(<0) index\n");
-        Stack_Info(stk);
+        printf(RED "Error in %s:%d: trying to Pop negative(<0) index\n" CRESET, __FILE__, __LINE__);
     }
 
     if ((stk -> capacity) >= (stk -> size) * INCREASE_DATA * 2 && (stk -> capacity) > START_CAPACITY)
     {
-        StackElem_t* temp = (StackElem_t*)realloc(stk -> data, (stk -> capacity) / INCREASE_DATA * sizeof(StackElem_t));
-        if (temp != NULL)
+        stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data - 1, ((stk -> capacity) / INCREASE_DATA + 2) * sizeof(stack_elem_t));
+        if (temp == NULL)
         {
-            stk -> data = temp;
-            (stk -> capacity) /= INCREASE_DATA;
+            printf(RED "Stack decrease error in %s:%d\n" CRESET, __FILE__, __LINE__);
+            return STK_DECREASE_ERR;
         }
-        else
-        {
-            printf("Stack decrease error\n");
-            return 6;
-        }
+
+        (stk -> capacity) /= INCREASE_DATA;
+        temp[stk -> capacity + 1] = CANARY_VALUE;
+        stk -> data = temp + 1;
+        
     }
 
-    return 0;
+    return stack_verify(stk);
 }
 
 //----------------------------------------------------------------------------
-int Stack_Error(stack_lifo* stk)
+stk_error_codes_t stack_verify(stack_lifo_t* stk)
 {
-    int error = 0;
+    if (stk == NULL)                     return STK_PTR_NULL;
+    if (stk -> data == NULL)             return STK_DATA_PTR_NULL;
+    if ((ssize_t)stk -> size < 0)        return STK_ELEM_ERROR;
+    if (stk -> capacity <= 0)            return STK_ELEM_ERROR;
+    if (stk -> size > stk -> capacity)  return STK_ELEM_ERROR;
+    if (stk -> data[-1] != CANARY_VALUE || stk -> data[stk -> capacity] != CANARY_VALUE) return STK_CANARY_ERR;
 
-    if (stk == NULL)                     error = 1;
-    if (stk -> data == NULL)             error = 2;
-    if (stk -> capacity == 0)            error = 3;
-    if (stk -> size >= stk -> capacity)  error = 4;
-    if (stk -> size != 0)
+    for (size_t i = 0; i < stk -> size; i++)
     {
-        if (stk -> data[stk -> size - 1] == POISON)
-            return 5;
+        if (stk -> data[i] == POISON_ELEM)
+            return STK_DATA_POISON_VALUE;
     }
 
-    return error;
+    for (size_t i = stk -> size; i < stk -> capacity; i++)
+    {
+        if (stk -> data[i] != POISON_ELEM)
+            return STK_DATA_POISON_VALUE;
+    }
+
+    return STK_NO_ERROR;
 }
 
 //----------------------------------------------------------------------------
-int Stack_Init_Error(stack_lifo* stk)
+stk_error_codes_t stack_init_verify(stack_lifo_t* stk)
 {
-    int error = 0;
+    stk_error_codes_t err = STK_NO_ERROR;
 
-    if (stk == NULL)          error = 1;
-    if (stk -> data != 0)     error = 8;
-    if (stk -> size != 0)     error = 8;
-    if (stk -> capacity != 0) error = 8;
+    if (stk == NULL)          err = STK_PTR_NULL;
+    if (stk -> data != 0)     err = STK_INIT_ERR;
+    if (stk -> size != 0)     err = STK_INIT_ERR;
+    if (stk -> capacity != 0) err = STK_INIT_ERR;
 
-    return error;
+    return err;
 }
 
 //----------------------------------------------------------------------------
-void Stack_Info(stack_lifo* stk)
+stk_error_codes_t stack_dump(stack_lifo_t* stk, const char* name, const char* mode)
 {
-    printf("<------------\n");
-    printf("capacity = %zu\n", stk -> capacity);
-    printf("size = %d\n", stk -> size);
-    printf("data [%p]\n", stk -> data);
+    stk_error_codes_t err = STK_NO_ERROR;
 
-    printf("    {\n");
+    FILE* file = fopen(name, mode);
+    if (file == NULL)
+    {
+        printf(RED "Stack dump error in %s:%d\n" CRESET, __FILE__, __LINE__);
+        err = STK_DUMP_ERR;
+        return err;
+    }
+
+    fprintf(file, "<------------\n");
+    fprintf(file, "capacity = %zu\n", stk -> capacity);
+    fprintf(file, "size = %zu\n", stk -> size);
+    fprintf(file, "data [%p]\n", stk -> data);
+
+    fprintf(file, "    {\n");
     for (size_t i = 0; i < (stk -> capacity); i++)
     {
-        if (stk -> data[i] != POISON)
+        if (stk -> data[i] == POISON_ELEM)
         {
-            printf("     *[%zu] = %lg\n", i, stk -> data[i]);
+            fprintf(file, "     [%zu] = %lg(POISON_ELEM)\n", i, stk -> data[i]);
+        }
+        else if (stk -> data[i] == CANARY_VALUE)
+        {
+            fprintf(file, "     [%zu] = %lg(CANARY_VALUE)\n", i, stk -> data[i]);
         }
         else
         {
-            printf("     [%zu] = %lg(POISON)\n", i, stk -> data[i]);
+            fprintf(file, "     *[%zu] = %lg\n", i, stk -> data[i]);
         }
+        
     }
-    printf("    }\n");
-    printf("------------>\n");
+    fprintf(file, "    }\n");
+    fprintf(file, "------------>\n");
+    fprintf(file, "\n");
+
+    fclose(file);
+
+    return err;
+}
+
+//----------------------------------------------------------------------------
+stk_error_codes_t stack_destroy(stack_lifo_t* stk)
+{
+    stk_error_codes_t err = STK_NO_ERROR;
+    if ((err = stack_verify(stk)) != 0)
+    {
+        printf(RED "Stack_destroy enter error in %s:%d\n" CRESET, __FILE__, __LINE__);
+
+        return err;
+    }
+
+    free(stk -> data - 1);
+    *(stk -> data) = POISON_POINTER;
+
+    return err;
 }

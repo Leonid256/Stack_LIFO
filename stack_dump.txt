@@ -1,0 +1,31 @@
+<------------
+capacity = 5
+size = 0
+data [0x1029c5b08]
+    {
+     [0] = 1.02084e+12(POISON_ELEM)
+     [1] = 1.02084e+12(POISON_ELEM)
+     [2] = 1.02084e+12(POISON_ELEM)
+     [3] = 1.02084e+12(POISON_ELEM)
+     [4] = 1.02084e+12(POISON_ELEM)
+    }
+------------>
+
+<------------
+capacity = 10
+size = 3
+data [0x1029c59f8]
+    {
+     *[0] = 10
+     *[1] = 20
+     *[2] = 30
+     [3] = 1.02084e+12(POISON_ELEM)
+     [4] = 1.02084e+12(POISON_ELEM)
+     [5] = 1.02084e+12(POISON_ELEM)
+     [6] = 1.02084e+12(POISON_ELEM)
+     [7] = 1.02084e+12(POISON_ELEM)
+     [8] = 1.02084e+12(POISON_ELEM)
+     [9] = 1.02084e+12(POISON_ELEM)
+    }
+------------>
+
