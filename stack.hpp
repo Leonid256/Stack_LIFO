@@ -10,6 +10,7 @@ typedef double stack_elem_t;
 struct stack_lifo_t
 {
     stack_elem_t* data;
+    stack_elem_t* real_data;
     size_t size;
     size_t capacity;
 };
@@ -46,10 +47,12 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk);
 #define YEL "\e[0;33m"
 
 #define CRESET "\e[0m"
+
+#define POISON_POINTER NULL
 //----------------------------------------------------------------------------
 const size_t START_CAPACITY = 5;
 const int INCREASE_DATA = 2;
 const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
 const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
-const stack_elem_t POISON_POINTER = NULL;
+//const stack_elem_t* POISON_POINTER = NULL;
 const char* STACK_DUMP_FILE = "stack_dump.txt";
