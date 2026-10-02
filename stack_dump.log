@@ -1,0 +1,13 @@
+<------------
+capacity = 5
+size = 0
+data [0x102979838]
+    {
+     [0] = 1.02084e+12(POISON_ELEM)
+     [1] = 1.02084e+12(POISON_ELEM)
+     [2] = 1.02084e+12(POISON_ELEM)
+     [3] = 1.02084e+12(POISON_ELEM)
+     [4] = 1.02084e+12(POISON_ELEM)
+    }
+------------>
+

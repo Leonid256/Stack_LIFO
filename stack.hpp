@@ -1,3 +1,6 @@
+#ifndef STACK_HPP
+#define STACK_HPP
+
 typedef double stack_elem_t;
 
 //----------------------------------------------------------------------------
@@ -6,6 +9,8 @@ typedef double stack_elem_t;
 #include <stdlib.h>
 #include <string.h>
 
+#include "colours.hpp"
+
 //----------------------------------------------------------------------------
 struct stack_lifo_t
 {
@@ -13,6 +18,7 @@ struct stack_lifo_t
     stack_elem_t* real_data;
     size_t size;
     size_t capacity;
+
 };
 
 enum stk_error_codes_t
@@ -32,27 +38,29 @@ enum stk_error_codes_t
 };
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_init(stack_lifo_t* stk, size_t capacity);
+stk_error_codes_t stack_init(stack_lifo_t* stk, size_t capacity, int line);
 stk_error_codes_t increase_stack_init(stack_elem_t* data, size_t capacity);
-stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t elem);
-stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value);
+stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line);
+stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line);
 stk_error_codes_t stack_verify(stack_lifo_t* stk);
 stk_error_codes_t stack_init_verify(stack_lifo_t* stk);
-stk_error_codes_t stack_dump(stack_lifo_t* stk, const char* name, const char* mode);
-stk_error_codes_t stack_destroy(stack_lifo_t* stk);
+stk_error_codes_t stack_dump(stack_lifo_t* stk, const char* name, const char* mode, int line);
+stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
 
 //----------------------------------------------------------------------------
-#define RED "\e[0;31m"
-#define GRN "\e[0;32m"
-#define YEL "\e[0;33m"
-
-#define CRESET "\e[0m"
-
 #define POISON_POINTER NULL
+
+#define stack_init_default(stk, capacity) stack_init(stk, capacity, __LINE__)
+#define stack_push_default(stk, value) stack_push(stk, value, __LINE__)
+#define stack_pop_default(stk, value) stack_pop(stk, value, __LINE__)
+#define stack_dump_default(stk, name, mode) stack_dump(stk, name, mode, __LINE__)
+#define stack_destroy_default(stk) stack_destroy(stk, __LINE__)
 //----------------------------------------------------------------------------
 const size_t START_CAPACITY = 5;
 const int INCREASE_DATA = 2;
 const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
 const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
-//const stack_elem_t* POISON_POINTER = NULL;
-const char* STACK_DUMP_FILE = "stack_dump.txt";
+const char* STACK_DUMP_FILE = "stack_dump.log";
+
+//----------------------------------------------------------------------------
+#endif
