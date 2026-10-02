@@ -12,13 +12,21 @@ typedef double stack_elem_t;
 #include "colours.hpp"
 
 //----------------------------------------------------------------------------
+//#define CANARY_PROTECT_ON
+
+//----------------------------------------------------------------------------
 struct stack_lifo_t
 {
-    stack_elem_t* data;
+    #ifdef CANARY_PROTECT_ON
+        double l_canary;
+        stack_elem_t* data;
+    #endif
     stack_elem_t* real_data;
     size_t size;
     size_t capacity;
-
+    #ifdef CANARY_PROTECT_ON
+        double r_canary;
+    #endif
 };
 
 enum stk_error_codes_t
@@ -34,7 +42,8 @@ enum stk_error_codes_t
     STK_INIT_ERR            = 8,
     STK_DUMP_ERR            = 9,
     STK_CANARY_ERR          = 10,
-    STK_EMPTY_ERR           = 11
+    STK_EMPTY_ERR           = 11,
+    STK_STRUCT_CANARY_ERR   = 12
 };
 
 //----------------------------------------------------------------------------
@@ -50,6 +59,7 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
 //----------------------------------------------------------------------------
 #define POISON_POINTER NULL
 
+
 #define stack_init_default(stk, capacity) stack_init(stk, capacity, __LINE__)
 #define stack_push_default(stk, value) stack_push(stk, value, __LINE__)
 #define stack_pop_default(stk, value) stack_pop(stk, value, __LINE__)
@@ -59,6 +69,7 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
 const size_t START_CAPACITY = 5;
 const int INCREASE_DATA = 2;
 const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
+const double STRUCT_CANARY_VALUE = 0xDEADBEEFDEAD;
 const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
 const char* STACK_DUMP_FILE = "stack_dump.log";
 
