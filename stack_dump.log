@@ -1,7 +1,7 @@
 <------------
 capacity = 5
 size = 0
-data [0x1009c1b40]
+data [0x6060000002c8]
     {
      [0] = 1.02084e+12(POISON_ELEM)
      [1] = 1.02084e+12(POISON_ELEM)
@@ -14,7 +14,7 @@ data [0x1009c1b40]
 <------------
 capacity = 10
 size = 3
-data [0x1009c1a10]
+data [0x608000000128]
     {
      *[0] = 10
      *[1] = 20

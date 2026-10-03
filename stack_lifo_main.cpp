@@ -39,9 +39,7 @@ int main()
     printf("x5 = %lg\n", x);
 
     err = stack_dump_default(&stk1, STACK_DUMP_FILE, "a");
-    printf("goida1\n");
     err = stack_destroy_default(&stk1);
-    printf("goida2\n");
 
     return err;
 }
@@ -134,11 +132,10 @@ stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
             stk -> real_data = POISON_POINTER;
         }
 
-        temp[stk -> capacity * INCREASE_DATA + 1] = CANARY_VALUE;
         #ifdef CANARY_PROTECT_ON
-            
+            temp[stk -> capacity * INCREASE_DATA + 1] = CANARY_VALUE;
             stk -> real_data = temp + 1;
-            //stk -> data = temp;
+            stk -> data = temp;
         #else
             stk -> real_data = temp;
         #endif
@@ -235,19 +232,19 @@ stk_error_codes_t stack_verify(stack_lifo_t* stk)
     if (stk -> capacity <= 0)            return STK_ELEM_ERROR;
     if (stk -> size > stk -> capacity)   return STK_ELEM_ERROR;
     #ifdef CANARY_PROTECT_ON
-        if (stk -> l_canary != STRUCT_CANARY_VALUE || stk -> r_canary != STRUCT_CANARY_VALUE) return STK_STRUCT_CANARY_ERR;
-        if (stk -> real_data[-1] != CANARY_VALUE || stk -> real_data[stk -> capacity] != CANARY_VALUE) return STK_CANARY_ERR;
+        if (!is_equal(stk -> l_canary, STRUCT_CANARY_VALUE) || !is_equal(stk -> r_canary, STRUCT_CANARY_VALUE)) return STK_STRUCT_CANARY_ERR;
+        if (!is_equal(stk -> real_data[-1], CANARY_VALUE) || !is_equal(stk -> real_data[stk -> capacity], CANARY_VALUE)) return STK_CANARY_ERR;
     #endif
 
     for (size_t i = 0; i < stk -> size; i++)
     {
-        if (stk -> real_data[i] == POISON_ELEM)
+        if (is_equal(stk -> real_data[i], POISON_ELEM))
             return STK_DATA_POISON_VALUE;
     }
 
     for (size_t i = stk -> size; i < stk -> capacity; i++)
     {
-        if (stk -> real_data[i] != POISON_ELEM)
+        if (!is_equal(stk -> real_data[i], POISON_ELEM))
             return STK_DATA_POISON_VALUE;
     }
 
@@ -267,8 +264,8 @@ stk_error_codes_t stack_init_verify(stack_lifo_t* stk)
     if (stk -> size != 0)       err = STK_INIT_ERR;
     if (stk -> capacity != 0)   err = STK_INIT_ERR;
     #ifdef CANARY_PROTECT_ON
-        if (stk -> l_canary != 0)   err = STK_INIT_ERR;
-        if (stk -> r_canary != 0)   err = STK_INIT_ERR;
+        if (!is_equal(stk -> l_canary, 0))   err = STK_INIT_ERR;
+        if (!is_equal(stk -> r_canary, 0))   err = STK_INIT_ERR;
     #endif
 
     return err;
@@ -305,12 +302,12 @@ stk_error_codes_t stack_dump(stack_lifo_t* stk, const char* name, const char* mo
     fprintf(file, "    {\n");
     for (size_t i = 0; i < (stk -> capacity); i++)
     {
-        if (stk -> real_data[i] == POISON_ELEM)
+        if (is_equal(stk -> real_data[i], POISON_ELEM))
         {
             fprintf(file, "     [%zu] = %lg(POISON_ELEM)\n", i, stk -> real_data[i]);
         }
         #ifdef CANARY_PROTECT_ON
-            else if (stk -> real_data[i] == CANARY_VALUE)
+            else if (is_equal(stk -> real_data[i], CANARY_VALUE))
             {
                 fprintf(file, "     [%zu] = %lg(CANARY_VALUE)\n", i, stk -> real_data[i]);
             }
@@ -354,4 +351,13 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line)
     stk -> real_data = POISON_POINTER;
 
     return err;
+}
+
+//----------------------------------------------------------------------------
+bool is_equal(stack_elem_t a, stack_elem_t b)
+{
+    if (abs(a - b) < EPCILON)
+        return true;
+    else
+        return false;
 }

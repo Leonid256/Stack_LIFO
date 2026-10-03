@@ -8,24 +8,25 @@ typedef double stack_elem_t;
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "colours.hpp"
 
 //----------------------------------------------------------------------------
-//#define CANARY_PROTECT_ON
+#define CANARY_PROTECT_ON
 
 //----------------------------------------------------------------------------
 struct stack_lifo_t
 {
     #ifdef CANARY_PROTECT_ON
-        double l_canary;
+        stack_elem_t l_canary;
         stack_elem_t* data;
     #endif
     stack_elem_t* real_data;
     size_t size;
     size_t capacity;
     #ifdef CANARY_PROTECT_ON
-        double r_canary;
+        stack_elem_t r_canary;
     #endif
 };
 
@@ -55,6 +56,7 @@ stk_error_codes_t stack_verify(stack_lifo_t* stk);
 stk_error_codes_t stack_init_verify(stack_lifo_t* stk);
 stk_error_codes_t stack_dump(stack_lifo_t* stk, const char* name, const char* mode, int line);
 stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
+bool is_equal(stack_elem_t a, stack_elem_t b);
 
 //----------------------------------------------------------------------------
 #define POISON_POINTER NULL
@@ -69,9 +71,10 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
 const size_t START_CAPACITY = 5;
 const int INCREASE_DATA = 2;
 const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
-const double STRUCT_CANARY_VALUE = 0xDEADBEEFDEAD;
+const stack_elem_t STRUCT_CANARY_VALUE = 0xDEADBEEFDEAD;
 const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
 const char* STACK_DUMP_FILE = "stack_dump.log";
+const double EPCILON = 0.001;
 
 //----------------------------------------------------------------------------
 #endif
