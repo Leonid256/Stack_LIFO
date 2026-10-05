@@ -3,7 +3,6 @@
 unsigned long long error = 0;
 FILE* file = NULL;
 
-//TODO: on debug mode
 //----------------------------------------------------------------------------
 int main()
 {
@@ -24,7 +23,6 @@ int main()
 
     stack_status stk_status = SUCCESS;
     stack_lifo_t stk1 = {};
-    //stk_error_codes_t err = STK_NO_ERROR;
     stk_status = stack_init_default(&stk1, START_CAPACITY);
     stk_status = stack_dump_default(&stk1);
     print_stack_status(stk_status);
@@ -69,11 +67,13 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
 {
     stack_status err = SUCCESS;
 
-    if ((err = stack_init_verify(stk)) != SUCCESS)
-    {
-        fprintf(file, "Stack_init enter error in (%s)%s:%d\n", __func__, __FILE__, line);
-        return err;
-    }
+    #ifdef STK_VERIFY_ON
+        if ((err = stack_init_verify(stk)) != SUCCESS)
+        {
+            fprintf(file, "Stack_init enter error in (%s)%s:%d\n", __func__, __FILE__, line);
+            return err;
+        }
+    #endif
 
     #ifdef CANARY_PROTECT_ON
         stack_elem_t* raw_data = (stack_elem_t*)calloc(capacity + 2, sizeof(stack_elem_t));
@@ -90,19 +90,19 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
     else
     {
         #ifdef CANARY_PROTECT_ON
-            stk -> data = POISON_POINTER;
+            stk -> buffer = POISON_POINTER;
         #endif
-        stk -> real_data = POISON_POINTER;
+        stk -> data = POISON_POINTER;
     }
     
     #ifdef CANARY_PROTECT_ON
         raw_data[0] = CANARY_VALUE;
         raw_data[capacity + 1] = CANARY_VALUE;
         stk -> l_canary = STRUCT_CANARY_VALUE;
-        stk -> data = raw_data;
-        stk -> real_data = raw_data + 1;
+        stk -> buffer = raw_data;
+        stk -> data = raw_data + 1;
     #else
-        stk -> real_data = raw_data;
+        stk -> data = raw_data;
     #endif
 
     stk -> size = 0;
@@ -113,7 +113,7 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
 
     for (size_t i = 0; i < capacity; i++)
     {
-        (stk -> real_data)[i] = POISON_ELEM;
+        (stk -> data)[i] = POISON_ELEM;
     }
 
     fprintf(file, "Stack init success\n");
@@ -126,21 +126,23 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 {
     stack_status err = SUCCESS;
 
-    if ((err = stack_verify(stk)) != SUCCESS)
-    {
-        fprintf(file, "Stack_push enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
-            fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
+    #ifdef STK_VERIFY_ON
+        if ((err = stack_verify(stk)) != SUCCESS)
+        {
+            fprintf(file, "Stack_push enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
+            if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
+                fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
 
-        return err;
-    }
+            return err;
+        }
+    #endif
 
     if ((stk -> size) >= (stk -> capacity))
     {
         #ifdef CANARY_PROTECT_ON
-            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data, ((stk -> capacity) * INCREASE_DATA + 2) * sizeof(stack_elem_t));
+            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> buffer, ((stk -> capacity) * INCREASE_DATA + 2) * sizeof(stack_elem_t));
         #else
-            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> real_data, ((stk -> capacity) * INCREASE_DATA) * sizeof(stack_elem_t));
+            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data, ((stk -> capacity) * INCREASE_DATA) * sizeof(stack_elem_t));
         #endif
 
         if (temp == NULL)
@@ -152,33 +154,37 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
         else
         {
             #ifdef CANARY_PROTECT_ON
-                stk -> data = POISON_POINTER;
+                stk -> buffer = POISON_POINTER;
             #endif
-            stk -> real_data = POISON_POINTER;
+            stk -> data = POISON_POINTER;
         }
 
         #ifdef CANARY_PROTECT_ON
             temp[stk -> capacity * INCREASE_DATA + 1] = CANARY_VALUE;
-            stk -> real_data = temp + 1;
-            stk -> data = temp;
+            stk -> data = temp + 1;
+            //stk -> buffer = temp;     //TODO: TODO: TODO: TODO: TODO:mistake here
         #else
-            stk -> real_data = temp;
+            stk -> data = temp;
         #endif
 
-        stk -> real_data[stk -> capacity] = POISON_ELEM;
+        stk -> data[stk -> capacity] = POISON_ELEM;
         (stk -> capacity) *= INCREASE_DATA;
 
         for (size_t i = stk -> capacity / INCREASE_DATA + 1; i < stk -> capacity; i++)
         {
-            stk -> real_data[i] = POISON_ELEM;
+            stk -> data[i] = POISON_ELEM;
         }
     }
 
-    (stk -> real_data)[stk -> size++] = value;
+    (stk -> data)[stk -> size++] = value;
 
     fprintf(file, "Stack push success. Value = " SPEC_TYPEDEF "\n", value);
 
-    return stack_verify(stk);
+    #ifdef STK_VERIFY_ON
+        return stack_verify(stk);
+    #else
+        return err;
+    #endif
 }
 
 //----------------------------------------------------------------------------
@@ -186,19 +192,21 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
 {
     stack_status err = SUCCESS;
 
-    if ((err = stack_verify(stk)) != SUCCESS)
-    {
-        fprintf(file, "Stack_pop enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
-            fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
+    #ifdef STK_VERIFY_ON
+        if ((err = stack_verify(stk)) != SUCCESS)
+        {
+            fprintf(file, "Stack_pop enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
+            if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
+                fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
 
-        return err;
-    }
+            return err;
+        }
+    #endif
 
     if (stk -> size > 0)
     {
-        *value = (stk -> real_data)[--(stk -> size)];
-        (stk -> real_data)[(stk -> size)] = POISON_ELEM;
+        *value = (stk -> data)[--(stk -> size)];
+        (stk -> data)[(stk -> size)] = POISON_ELEM;
     }
     else if (stk -> size == 0)
     {
@@ -217,7 +225,7 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         #ifdef CANARY_PROTECT_ON
             stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data, ((stk -> capacity) / INCREASE_DATA + 2) * sizeof(stack_elem_t));
         #else
-            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> real_data, ((stk -> capacity) / INCREASE_DATA) * sizeof(stack_elem_t));
+            stack_elem_t* temp = (stack_elem_t*)realloc(stk -> data, ((stk -> capacity) / INCREASE_DATA) * sizeof(stack_elem_t));
         #endif
 
         if (temp == NULL)
@@ -229,25 +237,29 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         else
         {
             #ifdef CANARY_PROTECT_ON
-                stk -> data = POISON_POINTER;
+                stk -> buffer = POISON_POINTER;
             #endif
-            stk -> real_data = POISON_POINTER;
+            stk -> data = POISON_POINTER;
         }
 
         (stk -> capacity) /= INCREASE_DATA;
         temp[stk -> capacity + 1] = CANARY_VALUE;
         #ifdef CANARY_PROTECT_ON
-            stk -> real_data = temp + 1;
-            stk -> data = temp;
+            stk -> data = temp + 1;
+            stk -> buffer = temp;
         #else
-            stk -> real_data = temp;
+            stk -> data = temp;
         #endif
         
     }
 
     fprintf(file, "Stack pop success. Value = " SPEC_TYPEDEF "\n", *value);
 
-    return stack_verify(stk);
+    #ifdef STK_VERIFY_ON
+        return stack_verify(stk);
+    #else 
+        return err;
+    #endif
 }
 
 //----------------------------------------------------------------------------
@@ -262,13 +274,13 @@ stack_status stack_verify(stack_lifo_t* stk)
     }
 
     #ifdef CANARY_PROTECT_ON
-        if (stk -> data == NULL)         
+        if (stk -> buffer == NULL)         
         {
             error |= STK_DATA_PTR_NULL;
             return PIZDETS;
         }
     #endif
-    if (stk -> real_data == NULL)        
+    if (stk -> data == NULL)        
     {
         error |= STK_DATA_PTR_NULL;
         return PIZDETS;
@@ -294,7 +306,7 @@ stack_status stack_verify(stack_lifo_t* stk)
             error |= STK_STRUCT_CANARY_ERR;
             err = PIZDETS;
         }
-        if (!is_equal(stk -> real_data[-1], CANARY_VALUE) || !is_equal(stk -> real_data[stk -> capacity], CANARY_VALUE)) 
+        if (!is_equal(stk -> data[-1], CANARY_VALUE) || !is_equal(stk -> data[stk -> capacity], CANARY_VALUE)) 
         {
             error |= STK_CANARY_ERR;
             err = PIZDETS;
@@ -303,7 +315,7 @@ stack_status stack_verify(stack_lifo_t* stk)
 
     for (size_t i = 0; i < stk -> size; i++)
     {
-        if (is_equal(stk -> real_data[i], POISON_ELEM))
+        if (is_equal(stk -> data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
             err = PIZDETS;
@@ -312,7 +324,7 @@ stack_status stack_verify(stack_lifo_t* stk)
 
     for (size_t i = stk -> size; i < stk -> capacity; i++)
     {
-        if (!is_equal(stk -> real_data[i], POISON_ELEM))
+        if (!is_equal(stk -> data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
             err = PIZDETS;
@@ -333,13 +345,13 @@ stack_status stack_init_verify(stack_lifo_t* stk)
         return PIZDETS;
     }
     #ifdef CANARY_PROTECT_ON
-        if (stk -> data != 0)   
+        if (stk -> buffer != 0)   
         {
             error |= STK_INIT_ERR;
             err = PIZDETS;
         }
     #endif
-    if (stk -> real_data != 0)  
+    if (stk -> data != 0)  
     {
         error |= STK_INIT_ERR;
         err = PIZDETS;
@@ -375,40 +387,42 @@ stack_status stack_dump(stack_lifo_t* stk, int line)
 {
     stack_status err = SUCCESS;
 
-    if ((err = stack_verify(stk)) != SUCCESS)
-    {
-        fprintf(file, "Stack_dump enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
-        stack_errors_print(line);
+    #ifdef STK_VERIFY_ON
+        if ((err = stack_verify(stk)) != SUCCESS)
+        {
+            fprintf(file, "Stack_dump enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
+            stack_errors_print(line);
 
-        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
-            fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
-        
-        return err;
-    }
+            if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
+                fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
+            
+            return err;
+        }
+    #endif
 
     stack_errors_print(line);
 
     fprintf(file, "<------------\n");
     fprintf(file, "capacity = %zu\n", stk -> capacity);
     fprintf(file, "size = %zu\n", stk -> size);
-    fprintf(file, "data [%p]\n", stk -> real_data);
+    fprintf(file, "data [%p]\n", stk -> data);
 
     fprintf(file, "    {\n");
     for (size_t i = 0; i < (stk -> capacity); i++)
     {
-        if (is_equal(stk -> real_data[i], POISON_ELEM))
+        if (is_equal(stk -> data[i], POISON_ELEM))
         {
-            fprintf(file, "     [%zu] = %lg(POISON_ELEM)\n", i, stk -> real_data[i]);
+            fprintf(file, "     [%zu] = %lg(POISON_ELEM)\n", i, stk -> data[i]);
         }
         #ifdef CANARY_PROTECT_ON
-            else if (is_equal(stk -> real_data[i], CANARY_VALUE))
+            else if (is_equal(stk -> data[i], CANARY_VALUE))
             {
-                fprintf(file, "     [%zu] = %lg(CANARY_VALUE)\n", i, stk -> real_data[i]);
+                fprintf(file, "     [%zu] = %lg(CANARY_VALUE)\n", i, stk -> data[i]);
             }
         #endif
         else
         {
-            fprintf(file, "     *[%zu] = %lg\n", i, stk -> real_data[i]);
+            fprintf(file, "     *[%zu] = %lg\n", i, stk -> data[i]);
         }
         
     }
@@ -425,23 +439,26 @@ stack_status stack_dump(stack_lifo_t* stk, int line)
 stack_status stack_destroy(stack_lifo_t* stk, int line)
 {
     stack_status err = SUCCESS;
-    if ((err = stack_verify(stk)) != SUCCESS)
-    {
-        fprintf(file, "Stack_destroy enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
 
-        stack_errors_print(line);
+    #ifdef STK_VERIFY_ON
+        if ((err = stack_verify(stk)) != SUCCESS)
+        {
+            fprintf(file, "Stack_destroy enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
 
-        return err;
-    }
+            stack_errors_print(line);
 
-    #ifdef CANARY_PROTECT_ON
-        free(stk -> data);
-        stk -> data = POISON_POINTER;
-    #else
-        free(stk -> real_data);
+            return err;
+        }
     #endif
 
-    stk -> real_data = POISON_POINTER;
+    #ifdef CANARY_PROTECT_ON
+        free(stk -> buffer);
+        stk -> buffer = POISON_POINTER;
+    #else
+        free(stk -> data);
+    #endif
+
+    stk -> data = POISON_POINTER;
 
     fprintf(file, "Stack destroy success\n");
 

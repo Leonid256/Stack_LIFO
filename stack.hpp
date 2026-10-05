@@ -14,15 +14,16 @@ typedef double stack_elem_t;
 
 //----------------------------------------------------------------------------
 #define CANARY_PROTECT_ON
+#define STK_VERIFY_ON
 
 //----------------------------------------------------------------------------
 struct stack_lifo_t
 {
     #ifdef CANARY_PROTECT_ON
         stack_elem_t l_canary;
-        stack_elem_t* data;
+        stack_elem_t* buffer;
     #endif
-    stack_elem_t* real_data;
+    stack_elem_t* data;
     size_t size;
     size_t capacity;
     #ifdef CANARY_PROTECT_ON
