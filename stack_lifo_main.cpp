@@ -3,7 +3,6 @@
 unsigned long long error = 0;
 FILE* file = NULL;
 
-//TODO: many errors possibility
 //TODO: on debug mode
 //----------------------------------------------------------------------------
 int main()
@@ -25,9 +24,10 @@ int main()
 
     stack_status stk_status = SUCCESS;
     stack_lifo_t stk1 = {};
-    stk_error_codes_t err = STK_NO_ERROR;
-    err = stack_init_default(&stk1, START_CAPACITY);
-    err = stack_dump_default(&stk1);
+    //stk_error_codes_t err = STK_NO_ERROR;
+    stk_status = stack_init_default(&stk1, START_CAPACITY);
+    stk_status = stack_dump_default(&stk1);
+    print_stack_status(stk_status);
 
     stack_push_default(&stk1, 10);
     stack_push_default(&stk1, 20);
@@ -56,16 +56,19 @@ int main()
     stack_pop_default(&stk1, &x);
     printf("x5 = %lg\n", x);
 
-    err = stack_dump_default(&stk1);
-    err = stack_destroy_default(&stk1);
+    stk_status = stack_dump_default(&stk1);
+    stk_status = stack_destroy_default(&stk1);
 
-    return err;
+    print_stack_status(stk_status);
+
+    return stk_status;
 }
 
 //----------------------------------------------------------------------------
 stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
 {
     stack_status err = SUCCESS;
+
     if ((err = stack_init_verify(stk)) != SUCCESS)
     {
         fprintf(file, "Stack_init enter error in (%s)%s:%d\n", __func__, __FILE__, line);
@@ -81,7 +84,8 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
     if (raw_data == NULL)
     {
         fprintf(file, "Memory allocation error in (%s)%s:%d\n", __func__, __FILE__, line);
-        return STK_MEMORY_ERROR;
+        error |= STK_MEMORY_ERROR;
+        return PIZDETS;
     }
     else
     {
@@ -112,18 +116,20 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
         (stk -> real_data)[i] = POISON_ELEM;
     }
 
+    fprintf(file, "Stack init success\n");
+
     return err;
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
+stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 {
-    stk_error_codes_t err = STK_NO_ERROR;
-    if ((err = stack_verify(stk)) != STK_NO_ERROR)
+    stack_status err = SUCCESS;
+
+    if ((err = stack_verify(stk)) != SUCCESS)
     {
         fprintf(file, "Stack_push enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        fprintf(file, "err = %d\n", err);
-        if (err == STK_DATA_PTR_NULL)
+        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
             fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
 
         return err;
@@ -140,7 +146,8 @@ stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
         if (temp == NULL)
         {
             fprintf(file, "Stack increase error in (%s)%s:%d\n", __func__, __FILE__, line);
-            return STK_INCREASE_ERR;
+            error |= STK_INCREASE_ERR;
+            return PIZDETS;
         }
         else
         {
@@ -169,18 +176,20 @@ stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 
     (stk -> real_data)[stk -> size++] = value;
 
+    fprintf(file, "Stack push success. Value = " SPEC_TYPEDEF "\n", value);
+
     return stack_verify(stk);
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
+stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
 {
-    stk_error_codes_t err = STK_NO_ERROR;
-    if ((err = stack_verify(stk)) != STK_NO_ERROR)
+    stack_status err = SUCCESS;
+
+    if ((err = stack_verify(stk)) != SUCCESS)
     {
         fprintf(file, "Stack_pop enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        fprintf(file, "err = %d\n", err);
-        if (err == STK_DATA_PTR_NULL)
+        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
             fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
 
         return err;
@@ -195,7 +204,8 @@ stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
     {
         *value = POISON_ELEM;
         fprintf(file, "Error in (%s)%s:%d: try to pop elem, but stack is empty. Value = POISON_ELEM value\n", __func__, __FILE__, line);
-        return STK_EMPTY_ERR;
+        error |= STK_EMPTY_ERR;
+        return PIZDETS;
     }
     else
     {
@@ -213,7 +223,8 @@ stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         if (temp == NULL)
         {
             fprintf(file, "Stack decrease error in (%s)%s:%d\n", __func__, __FILE__, line);
-            return STK_DECREASE_ERR;
+            error |= STK_DECREASE_ERR;
+            return PIZDETS;
         }
         else
         {
@@ -234,12 +245,16 @@ stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         
     }
 
+    fprintf(file, "Stack pop success. Value = " SPEC_TYPEDEF "\n", *value);
+
     return stack_verify(stk);
 }
 
 //----------------------------------------------------------------------------
 stack_status stack_verify(stack_lifo_t* stk)
 {
+    stack_status err = SUCCESS;
+
     if (stk == NULL)
     {
         error |= STK_PTR_NULL;
@@ -261,28 +276,28 @@ stack_status stack_verify(stack_lifo_t* stk)
     if ((ssize_t)stk -> size < 0)        
     {
         error |= STK_ELEM_ERROR;
-        return PIZDETS;
+        err = PIZDETS;
     }
     if (stk -> capacity <= 0)            
     {
         error |= STK_ELEM_ERROR;
-        return PIZDETS;
+        err = PIZDETS;
     }
     if (stk -> size > stk -> capacity)   
     {
         error |= STK_ELEM_ERROR;
-        return PIZDETS;
+        err = PIZDETS;
     }
     #ifdef CANARY_PROTECT_ON
         if (!is_equal(stk -> l_canary, STRUCT_CANARY_VALUE) || !is_equal(stk -> r_canary, STRUCT_CANARY_VALUE)) 
         {
             error |= STK_STRUCT_CANARY_ERR;
-            return PIZDETS;
+            err = PIZDETS;
         }
         if (!is_equal(stk -> real_data[-1], CANARY_VALUE) || !is_equal(stk -> real_data[stk -> capacity], CANARY_VALUE)) 
         {
             error |= STK_CANARY_ERR;
-            return PIZDETS;
+            err = PIZDETS;
         }
     #endif
 
@@ -291,7 +306,7 @@ stack_status stack_verify(stack_lifo_t* stk)
         if (is_equal(stk -> real_data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
-            return PIZDETS;
+            err = PIZDETS;
         }
     }
 
@@ -300,47 +315,78 @@ stack_status stack_verify(stack_lifo_t* stk)
         if (!is_equal(stk -> real_data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
-            return PIZDETS;
+            err = PIZDETS;
         }
     }
 
-    return SUCCESS;
+    return err;
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_init_verify(stack_lifo_t* stk)
+stack_status stack_init_verify(stack_lifo_t* stk)
 {
-    stk_error_codes_t err = STK_NO_ERROR;
+    stack_status err = SUCCESS;
 
-    if (stk == NULL)            err = STK_PTR_NULL;
+    if (stk == NULL)            
+    {
+        error |= STK_PTR_NULL;
+        return PIZDETS;
+    }
     #ifdef CANARY_PROTECT_ON
-        if (stk -> data != 0)   err = STK_INIT_ERR;
+        if (stk -> data != 0)   
+        {
+            error |= STK_INIT_ERR;
+            err = PIZDETS;
+        }
     #endif
-    if (stk -> real_data != 0)  err = STK_INIT_ERR;
-    if (stk -> size != 0)       err = STK_INIT_ERR;
-    if (stk -> capacity != 0)   err = STK_INIT_ERR;
+    if (stk -> real_data != 0)  
+    {
+        error |= STK_INIT_ERR;
+        err = PIZDETS;
+    }
+    if (stk -> size != 0)       
+    {
+        error |= STK_INIT_ERR;
+        err = PIZDETS;
+    }
+    if (stk -> capacity != 0)   
+    {
+        error |= STK_INIT_ERR;
+        err = PIZDETS;
+    }
     #ifdef CANARY_PROTECT_ON
-        if (!is_equal(stk -> l_canary, 0))   err = STK_INIT_ERR;
-        if (!is_equal(stk -> r_canary, 0))   err = STK_INIT_ERR;
+        if (!is_equal(stk -> l_canary, 0))   
+        {
+            error |= STK_INIT_ERR;
+            err = PIZDETS;
+        }
+        if (!is_equal(stk -> r_canary, 0))   
+        {
+            error |= STK_INIT_ERR;
+            err = PIZDETS;
+        }
     #endif
 
     return err;
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_dump(stack_lifo_t* stk, int line)
+stack_status stack_dump(stack_lifo_t* stk, int line)
 {
-    stk_error_codes_t err = STK_NO_ERROR;
+    stack_status err = SUCCESS;
 
-    if ((err = stack_verify(stk)) != 0)
+    if ((err = stack_verify(stk)) != SUCCESS)
     {
-        fprintf(file, "Stack_dump enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        fprintf(file, "err = %d\n", err);
-        if (err == STK_DATA_PTR_NULL)
+        fprintf(file, "Stack_dump enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
+        stack_errors_print(line);
+
+        if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
             fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
         
         return err;
     }
+
+    stack_errors_print(line);
 
     fprintf(file, "<------------\n");
     fprintf(file, "capacity = %zu\n", stk -> capacity);
@@ -370,20 +416,21 @@ stk_error_codes_t stack_dump(stack_lifo_t* stk, int line)
     fprintf(file, "------------>\n");
     fprintf(file, "\n");
 
+    fprintf(file, "Stack dump success\n");
+
     return err;
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line)
+stack_status stack_destroy(stack_lifo_t* stk, int line)
 {
-    stk_error_codes_t err = STK_NO_ERROR;
-    if ((err = stack_verify(stk)) != 0)
+    stack_status err = SUCCESS;
+    if ((err = stack_verify(stk)) != SUCCESS)
     {
-        fprintf(file, "Stack_destroy enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
-        fprintf(file, "err = %d\n", err);
-        if (err == STK_DATA_PTR_NULL)
-            fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
-        
+        fprintf(file, "Stack_destroy enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
+
+        stack_errors_print(line);
+
         return err;
     }
 
@@ -395,6 +442,8 @@ stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line)
     #endif
 
     stk -> real_data = POISON_POINTER;
+
+    fprintf(file, "Stack destroy success\n");
 
     return err;
 }
@@ -409,15 +458,58 @@ bool is_equal(stack_elem_t a, stack_elem_t b)
 }
 
 //----------------------------------------------------------------------------
-stk_error_codes_t file_init(const char* name, const char* mode, int line)
+stack_status file_init(const char* name, const char* mode, int line)
 {
     file = fopen(name, mode);
 
     if (file == NULL)
     {
         printf(RED "Stack dump error in (%s)%s:%d\n" CRESET, __func__, __FILE__, line);
-        return STK_DUMP_ERR;
+        error |= STK_DUMP_ERR;
+        return PIZDETS;
     }
 
-    return STK_NO_ERROR;
+    return PIZDETS;
+}
+
+//----------------------------------------------------------------------------
+stack_status stack_errors_print(int line)
+{
+    fprintf(file, "#############\n");
+    fprintf(file, "\tErrors in stack at (%s)%s:%d ; \n", __func__, __FILE__, line);
+    if (error == STK_NO_ERROR)
+    {
+        fprintf(file, "\tNo errors in stack\n");
+        fprintf(file, "#############\n");
+        return SUCCESS;
+    }
+
+    if ((error & STK_PTR_NULL) == STK_PTR_NULL)                       fprintf(file, "\tSTK_PTR_NULL\n");
+    if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)             fprintf(file, "\tSTK_DATA_PTR_NULL\n");
+    if ((error & STK_ELEM_ERROR) == STK_ELEM_ERROR)                   fprintf(file, "\tSTK_ELEM_ERROR\n");
+    if ((error & STK_MEMORY_ERROR) == STK_MEMORY_ERROR)               fprintf(file, "\tSTK_MEMORY_ERROR\n");
+    if ((error & STK_DATA_POISON_VALUE) == STK_DATA_POISON_VALUE)     fprintf(file, "\tSTK_DATA_POISON_VALUE\n");
+    if ((error & STK_DECREASE_ERR) == STK_DECREASE_ERR)               fprintf(file, "\tSTK_DECREASE_ERR\n");
+    if ((error & STK_INCREASE_ERR) == STK_INCREASE_ERR)               fprintf(file, "\tSTK_INCREASE_ERR\n");
+    if ((error & STK_INIT_ERR) == STK_INIT_ERR)                       fprintf(file, "\tSTK_INIT_ERR\n");
+    if ((error & STK_DUMP_ERR) == STK_DUMP_ERR)                       fprintf(file, "\tSTK_DUMP_ERR\n");
+    if ((error & STK_CANARY_ERR) == STK_CANARY_ERR)                   fprintf(file, "\tSTK_CANARY_ERR\n");
+    if ((error & STK_EMPTY_ERR) == STK_EMPTY_ERR)                     fprintf(file, "\tSTK_EMPTY_ERR\n");
+    if ((error & STK_STRUCT_CANARY_ERR) == STK_STRUCT_CANARY_ERR)     fprintf(file, "\tSTK_STRUCT_CANARY_ERR\n");
+    if ((error & STK_FILE_ERROR) == STK_FILE_ERROR)                   fprintf(file, "\tSTK_FILE_ERROR\n");
+
+    fprintf(file, "#############\n");
+
+    return SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+void print_stack_status(stack_status stk_status)
+{
+    if (stk_status == SUCCESS)
+        printf(GRN "Stack status: %u\n" CRESET, stk_status);
+    else
+        printf(YEL "Stack status: %u\n" CRESET, stk_status);
+
+    fprintf(file, "Stack status print success\n");
 }

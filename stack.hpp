@@ -55,19 +55,21 @@ enum stack_status
 };
 
 //----------------------------------------------------------------------------
-stk_error_codes_t stack_init(stack_lifo_t* stk, size_t capacity, int line);
-stk_error_codes_t increase_stack_init(stack_elem_t* data, size_t capacity);
-stk_error_codes_t stack_push(stack_lifo_t* stk, stack_elem_t value, int line);
-stk_error_codes_t stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line);
-stk_error_codes_t stack_verify(stack_lifo_t* stk);
-stk_error_codes_t stack_init_verify(stack_lifo_t* stk);
-stk_error_codes_t stack_dump(stack_lifo_t* stk, int line);
-stk_error_codes_t stack_destroy(stack_lifo_t* stk, int line);
+stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line);
+stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line);
+stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line);
+stack_status stack_verify(stack_lifo_t* stk);
+stack_status stack_init_verify(stack_lifo_t* stk);
+stack_status stack_dump(stack_lifo_t* stk, int line);
+stack_status stack_destroy(stack_lifo_t* stk, int line);
 bool is_equal(stack_elem_t a, stack_elem_t b);
-stk_error_codes_t file_init(const char* name, const char* mode, int line);
+stack_status file_init(const char* name, const char* mode, int line);
+stack_status stack_errors_print(int line);
+void print_stack_status(stack_status stk_status);
 
 //----------------------------------------------------------------------------
 #define POISON_POINTER NULL
+#define SPEC_TYPEDEF "%lg"
 
 
 #define stack_init_default(stk, capacity) stack_init(stk, capacity, __LINE__)

@@ -1,3 +1,8 @@
+Stack init success
+#############
+	Errors in stack at (stack_errors_print)stack_lifo_main.cpp:29 ; 
+	No errors in stack
+#############
 <------------
 capacity = 5
 size = 0
@@ -11,6 +16,25 @@ data [0x6060000002c8]
     }
 ------------>
 
+Stack dump success
+Stack status print success
+Stack push success. Value = 10
+Stack push success. Value = 20
+Stack push success. Value = 30
+Stack push success. Value = 40
+Stack push success. Value = 50
+Stack push success. Value = 60
+Stack push success. Value = 70
+Stack pop success. Value = 70
+Stack pop success. Value = 60
+Stack pop success. Value = 50
+Stack pop success. Value = 40
+Stack push success. Value = 80
+Stack pop success. Value = 80
+#############
+	Errors in stack at (stack_errors_print)stack_lifo_main.cpp:59 ; 
+	No errors in stack
+#############
 <------------
 capacity = 10
 size = 3
@@ -29,3 +53,6 @@ data [0x608000000128]
     }
 ------------>
 
+Stack dump success
+Stack destroy success
+Stack status print success
