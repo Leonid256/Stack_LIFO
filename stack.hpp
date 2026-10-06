@@ -11,6 +11,20 @@ typedef double stack_elem_t;
 #include <math.h>
 
 #include "colours.hpp"
+#include "stk_verify.hpp"
+
+//----------------------------------------------------------------------------
+extern unsigned long long error;
+extern FILE* file;
+
+//----------------------------------------------------------------------------
+const size_t START_CAPACITY = 5;
+const int INCREASE_DATA = 2;
+const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
+const stack_elem_t STRUCT_CANARY_VALUE = 0xDEADBEEFDEAD;
+const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
+extern const char* STACK_DUMP_FILE;
+const double EPCILON = 0.001;
 
 //----------------------------------------------------------------------------
 #define CANARY_PROTECT_ON
@@ -72,21 +86,14 @@ void print_stack_status(stack_status stk_status);
 #define POISON_POINTER NULL
 #define SPEC_TYPEDEF "%lg"
 
+#define STACK_INIT(stk, capacity) stack_init(stk, capacity, __LINE__)
+#define STACK_PUSH(stk, value) stack_push(stk, value, __LINE__)
+#define STACK_POP(stk, value) stack_pop(stk, value, __LINE__)
+#define STACK_DUMP(stk) stack_dump(stk, __LINE__)
+#define STACK_DESTROY(stk) stack_destroy(stk, __LINE__)
+#define FILE_INIT(name, mode) file_init(name, mode, __LINE__)
 
-#define stack_init_default(stk, capacity) stack_init(stk, capacity, __LINE__)
-#define stack_push_default(stk, value) stack_push(stk, value, __LINE__)
-#define stack_pop_default(stk, value) stack_pop(stk, value, __LINE__)
-#define stack_dump_default(stk) stack_dump(stk, __LINE__)
-#define stack_destroy_default(stk) stack_destroy(stk, __LINE__)
-#define file_init_default(name, mode) file_init(name, mode, __LINE__)
-//----------------------------------------------------------------------------
-const size_t START_CAPACITY = 5;
-const int INCREASE_DATA = 2;
-const stack_elem_t POISON_ELEM = 0xEDAEDADEDA;
-const stack_elem_t STRUCT_CANARY_VALUE = 0xDEADBEEFDEAD;
-const stack_elem_t CANARY_VALUE = 0xDEADBEEF;
-const char* STACK_DUMP_FILE = "stack_dump.log";
-const double EPCILON = 0.001;
+#define ERROR_PRINT(err) if ((error & err) == err) fprintf(file, "\t%s\n", #err);
 
 //----------------------------------------------------------------------------
 #endif

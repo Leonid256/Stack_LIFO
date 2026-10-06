@@ -1,6 +1,6 @@
 Stack init success
 #############
-	Errors in stack at (stack_errors_print)stack_lifo_main.cpp:27 ; 
+	Errors in stack at (stack_errors_print)stack.cpp:29
 	No errors in stack
 #############
 <------------
@@ -18,28 +18,41 @@ data [0x6060000002c8]
 
 Stack dump success
 Stack status print success
-Stack push success. Value = 10
-Stack push success. Value = 20
-Stack push success. Value = 30
-Stack push success. Value = 40
-Stack push success. Value = 50
-Stack push success. Value = 60
-Stack_push enter error in (stack_push)stack_lifo_main.cpp:36 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_pop enter error in (stack_pop)stack_lifo_main.cpp:40 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_pop enter error in (stack_pop)stack_lifo_main.cpp:43 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_pop enter error in (stack_pop)stack_lifo_main.cpp:46 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_pop enter error in (stack_pop)stack_lifo_main.cpp:49 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_push enter error in (stack_push)stack_lifo_main.cpp:52 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_pop enter error in (stack_pop)stack_lifo_main.cpp:54 ; 	Possibly forgotten to assign a new pointer after realloc
-Stack_dump enter error in (stack_dump)stack_lifo_main.cpp:57 ; 
+Stack push success in (stack_push)stack.cpp:32. Value = 10
+Stack push success in (stack_push)stack.cpp:33. Value = 20
+Stack push success in (stack_push)stack.cpp:34. Value = 30
+Stack push success in (stack_push)stack.cpp:35. Value = 40
+Stack push success in (stack_push)stack.cpp:36. Value = 50
+Stack push success in (stack_push)stack.cpp:37. Value = 60
+Stack push success in (stack_push)stack.cpp:38. Value = 70
+Stack pop success in (stack_pop)stack.cpp:42. Value = 70
+Stack pop success in (stack_pop)stack.cpp:45. Value = 60
+Stack pop success in (stack_pop)stack.cpp:48. Value = 50
+Stack pop success in (stack_pop)stack.cpp:51. Value = 40
+Stack push success in (stack_push)stack.cpp:54. Value = 80
+Stack pop success in (stack_pop)stack.cpp:56. Value = 80
 #############
-	Errors in stack at (stack_errors_print)stack_lifo_main.cpp:57 ; 
-	STK_DATA_PTR_NULL
+	Errors in stack at (stack_errors_print)stack.cpp:63
+	No errors in stack
 #############
-	Possibly forgotten to assign a new pointer after realloc
-Stack_destroy enter error in (stack_destroy)stack_lifo_main.cpp:58 ; 
-#############
-	Errors in stack at (stack_errors_print)stack_lifo_main.cpp:58 ; 
-	STK_DATA_PTR_NULL
-#############
+<------------
+capacity = 10
+size = 3
+data [0x608000000128]
+    {
+     *[0] = 10
+     *[1] = 20
+     *[2] = 30
+     [3] = 1.02084e+12(POISON_ELEM)
+     [4] = 1.02084e+12(POISON_ELEM)
+     [5] = 1.02084e+12(POISON_ELEM)
+     [6] = 1.02084e+12(POISON_ELEM)
+     [7] = 1.02084e+12(POISON_ELEM)
+     [8] = 1.02084e+12(POISON_ELEM)
+     [9] = 1.02084e+12(POISON_ELEM)
+    }
+------------>
+
+Stack dump success
+Stack destroy success
 Stack status print success
