@@ -439,8 +439,8 @@ stack_status stack_errors_print(int line)
         return SUCCESS;
     }
 
-    ERROR_PRINT(STK_PTR_NULL);
-    ERROR_PRINT(STK_DATA_PTR_NULL);
+    ERROR_PRINT(STK_PTR_NULL);          //Тут реализовано без цикла, чтобы выводились названия ошибок, 
+    ERROR_PRINT(STK_DATA_PTR_NULL);     //  а не их числовые значения
     ERROR_PRINT(STK_ELEM_ERROR);
     ERROR_PRINT(STK_MEMORY_ERROR);
     ERROR_PRINT(STK_DATA_POISON_VALUE);
