@@ -67,7 +67,7 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
     #ifdef STK_VERIFY_ON
         if ((err = stack_verify(stk)) != SUCCESS)
         {
-            fprintf(file, "Stack_push enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
+            fprintf(file, "Stack_push enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
             if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
                 fprintf(file, "\tPossibly forgotten to assign a new pointer after realloc\n");
 
@@ -431,7 +431,7 @@ stack_status file_init(const char* name, const char* mode, int line)
 stack_status stack_errors_print(int line)
 {
     fprintf(file, "#############\n");
-    fprintf(file, "\tErrors in stack at (%s)%s:%d\n", __func__, __FILE__, line);
+    fprintf(file, "Errors in stack at (%s)%s:%d\n", __func__, __FILE__, line);
     if (error == STK_NO_ERROR)
     {
         fprintf(file, "\tNo errors in stack\n");
