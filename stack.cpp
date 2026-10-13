@@ -3,10 +3,10 @@
 //----------------------------------------------------------------------------
 stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     #ifdef STK_VERIFY_ON
-        if ((err = stack_init_verify(stk)) != SUCCESS)
+        if ((err = stack_init_verify(stk)) != STK_SUCCESS)
         {
             fprintf(file, "Stack_init enter error in (%s)%s:%d\n", __func__, __FILE__, line);
             return err;
@@ -23,7 +23,7 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
     {
         fprintf(file, "Memory allocation error in (%s)%s:%d\n", __func__, __FILE__, line);
         error |= STK_MEMORY_ERROR;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     else
     {
@@ -54,7 +54,7 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
         (stk -> data)[i] = POISON_ELEM;
     }
 
-    fprintf(file, "Stack init success\n");
+    fprintf(file, "Stack init STK_SUCCESS\n");
 
     return err;
 }
@@ -62,10 +62,10 @@ stack_status stack_init(stack_lifo_t* stk, size_t capacity, int line)
 //----------------------------------------------------------------------------
 stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     #ifdef STK_VERIFY_ON
-        if ((err = stack_verify(stk)) != SUCCESS)
+        if ((err = stack_verify(stk)) != STK_SUCCESS)
         {
             fprintf(file, "Stack_push enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
             if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
@@ -87,7 +87,7 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
         {
             fprintf(file, "Stack increase error in (%s)%s:%d\n", __func__, __FILE__, line);
             error |= STK_INCREASE_ERR;
-            return PIZDETS;
+            return STK_PIZDETS;
         }
         else
         {
@@ -116,7 +116,7 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 
     (stk -> data)[stk -> size++] = value;
 
-    fprintf(file, "Stack push success in (%s)%s:%d. Value = " SPEC_TYPEDEF "\n", __func__, __FILE__, line, value);
+    fprintf(file, "Stack push STK_SUCCESS in (%s)%s:%d. Value = " SPEC_TYPEDEF "\n", __func__, __FILE__, line, value);
 
     #ifdef STK_VERIFY_ON
         return stack_verify(stk);
@@ -128,10 +128,10 @@ stack_status stack_push(stack_lifo_t* stk, stack_elem_t value, int line)
 //----------------------------------------------------------------------------
 stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     #ifdef STK_VERIFY_ON
-        if ((err = stack_verify(stk)) != SUCCESS)
+        if ((err = stack_verify(stk)) != STK_SUCCESS)
         {
             fprintf(file, "Stack_pop enter error in (%s)%s:%d ; ", __func__, __FILE__, line);
             if ((error & STK_DATA_PTR_NULL) == STK_DATA_PTR_NULL)
@@ -151,7 +151,7 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         *value = POISON_ELEM;
         fprintf(file, "Error in (%s)%s:%d: try to pop elem, but stack is empty. Value = POISON_ELEM value\n", __func__, __FILE__, line);
         error |= STK_EMPTY_ERR;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     else
     {
@@ -170,7 +170,7 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         {
             fprintf(file, "Stack decrease error in (%s)%s:%d\n", __func__, __FILE__, line);
             error |= STK_DECREASE_ERR;
-            return PIZDETS;
+            return STK_PIZDETS;
         }
         else
         {
@@ -191,7 +191,7 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
         
     }
 
-    fprintf(file, "Stack pop success in (%s)%s:%d. Value = " SPEC_TYPEDEF "\n", __func__, __FILE__, line, *value);
+    fprintf(file, "Stack pop STK_SUCCESS in (%s)%s:%d. Value = " SPEC_TYPEDEF "\n", __func__, __FILE__, line, *value);
 
     #ifdef STK_VERIFY_ON
         return stack_verify(stk);
@@ -203,51 +203,51 @@ stack_status stack_pop(stack_lifo_t* stk, stack_elem_t* value, int line)
 //----------------------------------------------------------------------------
 stack_status stack_verify(stack_lifo_t* stk)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     if (stk == NULL)
     {
         error |= STK_PTR_NULL;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
 
     #ifdef CANARY_PROTECT_ON
         if (stk -> buffer == NULL)         
         {
             error |= STK_DATA_PTR_NULL;
-            return PIZDETS;
+            return STK_PIZDETS;
         }
     #endif
     if (stk -> data == NULL)        
     {
         error |= STK_DATA_PTR_NULL;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     if ((ssize_t)stk -> size < 0)        
     {
         error |= STK_ELEM_ERROR;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     if ((ssize_t)stk -> capacity <= 0)            
     {
         error |= STK_ELEM_ERROR;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     if (stk -> size > stk -> capacity)   
     {
         error |= STK_ELEM_ERROR;
-        err = PIZDETS;
+        err = STK_PIZDETS;
     }
     #ifdef CANARY_PROTECT_ON
         if (!is_equal(stk -> l_canary, STRUCT_CANARY_VALUE) || !is_equal(stk -> r_canary, STRUCT_CANARY_VALUE)) 
         {
             error |= STK_STRUCT_CANARY_ERR;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
         if (!is_equal(stk -> data[-1], CANARY_VALUE) || !is_equal(stk -> data[stk -> capacity], CANARY_VALUE)) 
         {
             error |= STK_CANARY_ERR;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
     #endif
 
@@ -256,7 +256,7 @@ stack_status stack_verify(stack_lifo_t* stk)
         if (is_equal(stk -> data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
     }
 
@@ -265,7 +265,7 @@ stack_status stack_verify(stack_lifo_t* stk)
         if (!is_equal(stk -> data[i], POISON_ELEM))
         {
             error |= STK_DATA_POISON_VALUE;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
     }
 
@@ -275,45 +275,45 @@ stack_status stack_verify(stack_lifo_t* stk)
 //----------------------------------------------------------------------------
 stack_status stack_init_verify(stack_lifo_t* stk)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     if (stk == NULL)            
     {
         error |= STK_PTR_NULL;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
     #ifdef CANARY_PROTECT_ON
         if (stk -> buffer != 0)   
         {
             error |= STK_INIT_ERR;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
     #endif
     if (stk -> data != 0)  
     {
         error |= STK_INIT_ERR;
-        err = PIZDETS;
+        err = STK_PIZDETS;
     }
     if (stk -> size != 0)       
     {
         error |= STK_INIT_ERR;
-        err = PIZDETS;
+        err = STK_PIZDETS;
     }
     if (stk -> capacity != 0)   
     {
         error |= STK_INIT_ERR;
-        err = PIZDETS;
+        err = STK_PIZDETS;
     }
     #ifdef CANARY_PROTECT_ON
         if (!is_equal(stk -> l_canary, 0))   
         {
             error |= STK_INIT_ERR;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
         if (!is_equal(stk -> r_canary, 0))   
         {
             error |= STK_INIT_ERR;
-            err = PIZDETS;
+            err = STK_PIZDETS;
         }
     #endif
 
@@ -323,10 +323,10 @@ stack_status stack_init_verify(stack_lifo_t* stk)
 //----------------------------------------------------------------------------
 stack_status stack_dump(stack_lifo_t* stk, int line)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     #ifdef STK_VERIFY_ON
-        if ((err = stack_verify(stk)) != SUCCESS)
+        if ((err = stack_verify(stk)) != STK_SUCCESS)
         {
             fprintf(file, "Stack_dump enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
             stack_errors_print(line);
@@ -368,7 +368,7 @@ stack_status stack_dump(stack_lifo_t* stk, int line)
     fprintf(file, "------------>\n");
     fprintf(file, "\n");
 
-    fprintf(file, "Stack dump success\n");
+    fprintf(file, "Stack dump STK_SUCCESS\n");
 
     return err;
 }
@@ -376,10 +376,10 @@ stack_status stack_dump(stack_lifo_t* stk, int line)
 //----------------------------------------------------------------------------
 stack_status stack_destroy(stack_lifo_t* stk, int line)
 {
-    stack_status err = SUCCESS;
+    stack_status err = STK_SUCCESS;
 
     #ifdef STK_VERIFY_ON
-        if ((err = stack_verify(stk)) != SUCCESS)
+        if ((err = stack_verify(stk)) != STK_SUCCESS)
         {
             fprintf(file, "Stack_destroy enter error in (%s)%s:%d ; \n", __func__, __FILE__, line);
 
@@ -398,7 +398,7 @@ stack_status stack_destroy(stack_lifo_t* stk, int line)
 
     stk -> data = POISON_POINTER;
 
-    fprintf(file, "Stack destroy success\n");
+    fprintf(file, "Stack destroy STK_SUCCESS\n");
 
     return err;
 }
@@ -406,7 +406,7 @@ stack_status stack_destroy(stack_lifo_t* stk, int line)
 //----------------------------------------------------------------------------
 bool is_equal(stack_elem_t a, stack_elem_t b)
 {
-    if (abs(a - b) < EPCILON)
+    if (abs(a - b) <= EPCILON)
         return true;
     else
         return false;
@@ -421,10 +421,10 @@ stack_status file_init(const char* name, const char* mode, int line)
     {
         printf(RED "Stack dump error in (%s)%s:%d\n" CRESET, __func__, __FILE__, line);
         error |= STK_DUMP_ERR;
-        return PIZDETS;
+        return STK_PIZDETS;
     }
 
-    return PIZDETS;
+    return STK_PIZDETS;
 }
 
 //----------------------------------------------------------------------------
@@ -436,7 +436,7 @@ stack_status stack_errors_print(int line)
     {
         fprintf(file, "\tNo errors in stack\n");
         fprintf(file, "#############\n");
-        return SUCCESS;
+        return STK_SUCCESS;
     }
 
     ERROR_PRINT(STK_PTR_NULL);          //Тут реализовано без цикла, чтобы выводились названия ошибок, 
@@ -455,16 +455,16 @@ stack_status stack_errors_print(int line)
 
     fprintf(file, "#############\n");
 
-    return SUCCESS;
+    return STK_SUCCESS;
 }
 
 //----------------------------------------------------------------------------
 void print_stack_status(stack_status stk_status)
 {
-    if (stk_status == SUCCESS)
+    if (stk_status == STK_SUCCESS)
         printf(GRN "Stack status: %u\n" CRESET, stk_status);
     else
         printf(YEL "Stack status: %u\n" CRESET, stk_status);
 
-    fprintf(file, "Stack status print success\n");
+    fprintf(file, "Stack status print STK_SUCCESS\n");
 }

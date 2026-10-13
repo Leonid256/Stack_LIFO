@@ -23,7 +23,7 @@ int main()
         }
     }
 
-    stack_status stk_status = SUCCESS;
+    stack_status stk_status = STK_SUCCESS;
     stack_lifo_t stk1 = {};
     stk_status = STACK_INIT(&stk1, START_CAPACITY);
     stk_status = STACK_DUMP(&stk1);

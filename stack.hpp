@@ -65,8 +65,8 @@ enum stk_error_codes_t
 
 enum stack_status
 {
-    SUCCESS = 0,
-    PIZDETS = 67
+    STK_SUCCESS = 0,
+    STK_PIZDETS = 67
 };
 
 //----------------------------------------------------------------------------
